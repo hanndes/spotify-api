@@ -25,7 +25,6 @@ public class ArtistService {
         }
 
         return new ArtistDto(
-                artistRoot.path("id").asText(),
                 artistRoot.path("name").asText(),
                 artistRoot.path("popularity").asInt(),
                 new ArtistDto.Followers(artistRoot.path("followers").path("total").asLong()),

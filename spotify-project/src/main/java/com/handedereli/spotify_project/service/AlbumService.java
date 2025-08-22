@@ -22,7 +22,6 @@ public class AlbumService {
 
         for (JsonNode album : root.path("items")) {
             albums.add(new AlbumDto(
-                    album.path("id").asText(),
                     album.path("name").asText(),
                     album.path("release_date").asText(),
                     album.path("total_tracks").asInt(),
@@ -41,7 +40,6 @@ public class AlbumService {
 
         List<TrackDto> result = new ArrayList<>();
         items.forEach(t -> result.add(new TrackDto(
-                t.path("id").asText(),
                 t.path("name").asText(),
                 t.path("duration_ms").asInt()
         )));
@@ -49,28 +47,27 @@ public class AlbumService {
     }
 
     public ArtistDto getArtistAlbumsWithTracks(String artistId, String market) {
-        // 1) Artist bilgisi (JsonNode)
+        // 1) Artist bilgisi
         JsonNode artistRoot = spotifyClient.getArtist(artistId);
 
-        // 2) Genres'ı direkt list'e dönüştür
+        // 2) Genres
         List<String> genres = new ArrayList<>();
         JsonNode genresNode = artistRoot.path("genres");
         if (genresNode.isArray()) {
             genresNode.forEach(n -> genres.add(n.asText()));
         }
 
-        // 3) ArtistDto'yu oluştur
+        // 3) ArtistDto (şimdilik albums=null)
         ArtistDto base = new ArtistDto(
-                artistRoot.path("id").asText(),
                 artistRoot.path("name").asText(),
                 artistRoot.path("popularity").asInt(),
                 new ArtistDto.Followers(artistRoot.path("followers").path("total").asLong()),
                 genres,
-                null // albümleri sonra ekleyeceğiz
+                null
         );
 
-        // 4) Sanatçının albümleri
-        JsonNode albumsRoot = spotifyClient.getArtistAlbums(artistId, market);
+        // 4) Sanatçının albümleri (tek sayfa)
+        JsonNode albumsRoot = spotifyClient.getArtistAlbums(artistId, market); // limit=50 veriyorsan tek sayfa yeter
         List<AlbumDto> albums = new ArrayList<>();
 
         for (JsonNode a : albumsRoot.path("items")) {
@@ -79,14 +76,20 @@ public class AlbumService {
             String releaseDate = a.path("release_date").asText();
             int totalTracks    = a.path("total_tracks").asInt();
 
-            // Albümün track'leri
+            // Albümün track’leri (tek çağrı: /albums/{id}?market=...)
             JsonNode albumWithTracks = spotifyClient.getAlbumWithTracks(albumId, market);
-            List<TrackDto> tracks = new ArrayList<>();
+
+            // /albums/{id} yanıtı: tracks.items altında
             JsonNode trackItems = albumWithTracks.path("tracks").path("items");
+            if (!trackItems.isArray()) {
+                // Eğer /albums/{id}/tracks dönüyorsa kökte items olur
+                trackItems = albumWithTracks.path("items");
+            }
+
+            List<TrackDto> tracks = new ArrayList<>();
             if (trackItems.isArray()) {
                 for (JsonNode t : trackItems) {
                     tracks.add(new TrackDto(
-                            t.path("id").asText(),
                             t.path("name").asText(),
                             t.path("duration_ms").asInt()
                     ));
@@ -94,7 +97,6 @@ public class AlbumService {
             }
 
             albums.add(new AlbumDto(
-                    albumId,
                     albumName,
                     releaseDate,
                     totalTracks,
@@ -102,7 +104,7 @@ public class AlbumService {
             ));
         }
 
-        // 5) ArtistDto'ya albümleri ekle
+        // 5) Albümleri ekle
         return base.withAlbums(albums);
     }
 

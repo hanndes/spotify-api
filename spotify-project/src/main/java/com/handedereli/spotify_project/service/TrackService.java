@@ -20,7 +20,6 @@ public class TrackService {
         // Spotify API -> { "tracks": [ {track1}, {track2}, ... ] }
         for (JsonNode t : root.path("tracks")) {
             tracks.add(new TrackDto(
-                    t.path("id").asText(),
                     t.path("name").asText(),
                     t.path("duration_ms").asInt()
             ));
