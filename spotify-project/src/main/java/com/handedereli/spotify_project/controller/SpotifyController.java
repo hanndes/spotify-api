@@ -1,8 +1,10 @@
 package com.handedereli.spotify_project.controller;
 
-import com.handedereli.spotify_project.dto.*;
+import com.handedereli.spotify_project.dto.AlbumDto;
+import com.handedereli.spotify_project.dto.ArtistDto;
+import com.handedereli.spotify_project.dto.TrackDto;
 import com.handedereli.spotify_project.service.AlbumService;
-import com.handedereli.spotify_project.service.ArtistBundleService;
+import com.handedereli.spotify_project.service.ArtistService;
 import com.handedereli.spotify_project.service.SpotifyClient;
 import com.handedereli.spotify_project.service.TrackService;
 import lombok.RequiredArgsConstructor;
@@ -17,16 +19,16 @@ import java.util.List;
 public class SpotifyController {
 
     private final SpotifyClient spotifyWebClient;
+    private final ArtistService artistService;
     private final TrackService trackService;
     private final AlbumService albumService;
-    private final ArtistBundleService artistBundleService;
 
     @GetMapping("/ping")
     public String ping() { return "ok"; }
-
     @GetMapping("/artists/{id}")
-   public ArtistDto getArtist(@PathVariable String id) {
-        return spotifyWebClient.getArtist(id);
+    public ResponseEntity<ArtistDto> getArtist(@PathVariable String id) {
+        ArtistDto artist = artistService.getArtist(id);
+        return ResponseEntity.ok(artist);
     }
 
     @GetMapping("/artist/{id}/top-tracks")
@@ -41,22 +43,6 @@ public class SpotifyController {
             @PathVariable String id,
             @RequestParam(defaultValue = "TR") String market) {
         return ResponseEntity.ok(albumService.getArtistAlbums(id, market));
-    }
-
-    // TEK ENDPOINT - İsim ile arama
-    @GetMapping("/artist/search")
-    public ResponseEntity<ArtistBundleDto> getArtistBundleByName(
-            @RequestParam String name,
-            @RequestParam(defaultValue = "TR") String market) {
-        return ResponseEntity.ok(artistBundleService.getArtistBundleByName(name, market));
-    }
-
-    // TEK ENDPOINT - ID ile direkt erişim
-    @GetMapping("/artist/{id}/bundle")
-    public ResponseEntity<ArtistBundleDto> getArtistBundle(
-            @PathVariable String id,
-            @RequestParam(defaultValue = "TR") String market) {
-        return ResponseEntity.ok(artistBundleService.getArtistBundle(id, market));
     }
 
     // 🔹 YENİ: Albüm içindeki track’ler
@@ -76,12 +62,10 @@ public class SpotifyController {
 
     // 2. Albüm + trackler
     @GetMapping("/{id}/albums-with-tracks")
-    public ResponseEntity<ArtistBundleDto> getArtistAlbumsWithTracks(
+    public ResponseEntity<ArtistDto> getArtistAlbumsWithTracks(
             @PathVariable String id,
             @RequestParam(defaultValue = "TR") String market) {
         return ResponseEntity.ok(albumService.getArtistAlbumsWithTracks(id, market));
     }
-
-
 
 }

@@ -13,23 +13,25 @@ import java.nio.charset.StandardCharsets;
 @RequiredArgsConstructor
 public class SpotifyClient {
 
-    private final WebClient spotifyWebClient;  // baseUrl set, auth header yok
+    private final WebClient spotifyWebClient;  // baseUrl: https://api.spotify.com/v1
     private final TokenService tokenService;
 
-    public ArtistDto getArtist(String artistId) {
+
+    public JsonNode getArtist(String artistId) {
         try {
             return spotifyWebClient.get()
                     .uri("/artists/{id}", artistId)
                     .header("Authorization", "Bearer " + tokenService.getAccessToken())
                     .retrieve()
-                    .bodyToMono(ArtistDto.class)
-                    .block(); // Sync çağrı için
+                    .bodyToMono(JsonNode.class)
+                    .block();
         } catch (Exception e) {
             throw new RuntimeException("Sanatçı bilgisi alınamadı: " + e.getMessage(), e);
         }
     }
-    public JsonNode getArtistTopTracks(String id, String market) {
 
+
+    public JsonNode getArtistTopTracks(String id, String market) {
         return spotifyWebClient.get()
                 .uri(uri -> uri.path("/artists/{id}/top-tracks")
                         .queryParam("market", market)
@@ -40,7 +42,6 @@ public class SpotifyClient {
                 .block();
     }
 
-    // YENİ: Sanatçının albümlerini getir
     public JsonNode getArtistAlbums(String artistId, String market) {
         return spotifyWebClient.get()
                 .uri(uri -> uri.path("/artists/{id}/albums")
@@ -53,7 +54,7 @@ public class SpotifyClient {
                 .bodyToMono(JsonNode.class)
                 .block();
     }
-    // YENİ: Albüm detay + trackler
+
     public JsonNode getAlbumWithTracks(String albumId, String market) {
         return spotifyWebClient.get()
                 .uri(uri -> uri.path("/albums/{id}")
@@ -64,6 +65,7 @@ public class SpotifyClient {
                 .bodyToMono(JsonNode.class)
                 .block();
     }
+
     public JsonNode searchArtist(String artistName) {
         return spotifyWebClient.get()
                 .uri(uri -> uri.path("/search")
@@ -76,13 +78,11 @@ public class SpotifyClient {
                 .bodyToMono(JsonNode.class)
                 .block();
     }
-    /** İsme göre ilk sanatçıyı döndürür */
+
     public JsonNode searchArtistByName(String name, String market) {
         String q = URLEncoder.encode(name, StandardCharsets.UTF_8);
-
         JsonNode root = spotifyWebClient.get()
-                .uri(uri -> uri
-                        .path("/search")
+                .uri(uri -> uri.path("/search")
                         .queryParam("q", q)
                         .queryParam("type", "artist")
                         .queryParam("market", market)
@@ -94,15 +94,7 @@ public class SpotifyClient {
                 .block();
 
         JsonNode items = root.path("artists").path("items");
-        if (items.isArray() && items.size() > 0) {
-            return items.get(0); // sadece ilk eşleşen artist
-        }
+        if (items.isArray() && items.size() > 0) return items.get(0);
         throw new IllegalStateException("Artist not found: " + name);
     }
-
-
-
 }
-
-
-
