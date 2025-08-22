@@ -6,6 +6,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
 @Service
 @RequiredArgsConstructor
 public class SpotifyClient {
@@ -50,6 +53,56 @@ public class SpotifyClient {
                 .bodyToMono(JsonNode.class)
                 .block();
     }
+    // YENİ: Albüm detay + trackler
+    public JsonNode getAlbumWithTracks(String albumId, String market) {
+        return spotifyWebClient.get()
+                .uri(uri -> uri.path("/albums/{id}")
+                        .queryParam("market", market)
+                        .build(albumId))
+                .header("Authorization", "Bearer " + tokenService.getAccessToken())
+                .retrieve()
+                .bodyToMono(JsonNode.class)
+                .block();
+    }
+    public JsonNode searchArtist(String artistName) {
+        return spotifyWebClient.get()
+                .uri(uri -> uri.path("/search")
+                        .queryParam("q", artistName)
+                        .queryParam("type", "artist")
+                        .queryParam("limit", "1")
+                        .build())
+                .header("Authorization", "Bearer " + tokenService.getAccessToken())
+                .retrieve()
+                .bodyToMono(JsonNode.class)
+                .block();
+    }
+    /** İsme göre ilk sanatçıyı döndürür */
+    public JsonNode searchArtistByName(String name, String market) {
+        String q = URLEncoder.encode(name, StandardCharsets.UTF_8);
+
+        JsonNode root = spotifyWebClient.get()
+                .uri(uri -> uri
+                        .path("/search")
+                        .queryParam("q", q)
+                        .queryParam("type", "artist")
+                        .queryParam("market", market)
+                        .queryParam("limit", 1)
+                        .build())
+                .header("Authorization", "Bearer " + tokenService.getAccessToken())
+                .retrieve()
+                .bodyToMono(JsonNode.class)
+                .block();
+
+        JsonNode items = root.path("artists").path("items");
+        if (items.isArray() && items.size() > 0) {
+            return items.get(0); // sadece ilk eşleşen artist
+        }
+        throw new IllegalStateException("Artist not found: " + name);
+    }
+
+
 
 }
+
+
 

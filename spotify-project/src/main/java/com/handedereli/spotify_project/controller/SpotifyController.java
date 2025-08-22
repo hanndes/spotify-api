@@ -1,9 +1,8 @@
 package com.handedereli.spotify_project.controller;
 
-import com.handedereli.spotify_project.dto.AlbumDto;
-import com.handedereli.spotify_project.dto.ArtistDto;
-import com.handedereli.spotify_project.dto.TrackDto;
+import com.handedereli.spotify_project.dto.*;
 import com.handedereli.spotify_project.service.AlbumService;
+import com.handedereli.spotify_project.service.ArtistBundleService;
 import com.handedereli.spotify_project.service.SpotifyClient;
 import com.handedereli.spotify_project.service.TrackService;
 import lombok.RequiredArgsConstructor;
@@ -20,11 +19,10 @@ public class SpotifyController {
     private final SpotifyClient spotifyWebClient;
     private final TrackService trackService;
     private final AlbumService albumService;
+    private final ArtistBundleService artistBundleService;
 
     @GetMapping("/ping")
     public String ping() { return "ok"; }
-
-
 
     @GetMapping("/artists/{id}")
    public ArtistDto getArtist(@PathVariable String id) {
@@ -44,6 +42,46 @@ public class SpotifyController {
             @RequestParam(defaultValue = "TR") String market) {
         return ResponseEntity.ok(albumService.getArtistAlbums(id, market));
     }
+
+    // TEK ENDPOINT - İsim ile arama
+    @GetMapping("/artist/search")
+    public ResponseEntity<ArtistBundleDto> getArtistBundleByName(
+            @RequestParam String name,
+            @RequestParam(defaultValue = "TR") String market) {
+        return ResponseEntity.ok(artistBundleService.getArtistBundleByName(name, market));
+    }
+
+    // TEK ENDPOINT - ID ile direkt erişim
+    @GetMapping("/artist/{id}/bundle")
+    public ResponseEntity<ArtistBundleDto> getArtistBundle(
+            @PathVariable String id,
+            @RequestParam(defaultValue = "TR") String market) {
+        return ResponseEntity.ok(artistBundleService.getArtistBundle(id, market));
+    }
+
+    // 🔹 YENİ: Albüm içindeki track’ler
+    // GET /api/albums/{albumId}/tracks?market=TR&limit=20&offset=0
+    @GetMapping("/albums/{albumId}/tracks")
+    public ResponseEntity<List<TrackDto>> getAlbumTracks(
+            @PathVariable String albumId,
+            @RequestParam(defaultValue = "TR") String market) {
+        return ResponseEntity.ok(albumService.getAlbumTracks(albumId, market));
+    }
+    @GetMapping("/albums/{id}")
+    public ResponseEntity<List<TrackDto>> getAlbumWithTracks(
+            @PathVariable String id,
+            @RequestParam(defaultValue = "TR") String market) {
+        return ResponseEntity.ok(albumService.getAlbumTracks(id, market));
+    }
+
+    // 2. Albüm + trackler
+    @GetMapping("/{id}/albums-with-tracks")
+    public ResponseEntity<ArtistBundleDto> getArtistAlbumsWithTracks(
+            @PathVariable String id,
+            @RequestParam(defaultValue = "TR") String market) {
+        return ResponseEntity.ok(albumService.getArtistAlbumsWithTracks(id, market));
+    }
+
 
 
 }
