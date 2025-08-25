@@ -1,7 +1,6 @@
 package com.handedereli.spotify_project.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.handedereli.spotify_project.dto.ArtistDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;

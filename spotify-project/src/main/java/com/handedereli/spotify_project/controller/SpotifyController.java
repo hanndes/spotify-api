@@ -1,12 +1,10 @@
 package com.handedereli.spotify_project.controller;
 
 import com.handedereli.spotify_project.dto.AlbumDto;
+import com.handedereli.spotify_project.dto.ArtistBundleDto;
 import com.handedereli.spotify_project.dto.ArtistDto;
 import com.handedereli.spotify_project.dto.TrackDto;
-import com.handedereli.spotify_project.service.AlbumService;
-import com.handedereli.spotify_project.service.ArtistService;
-import com.handedereli.spotify_project.service.SpotifyClient;
-import com.handedereli.spotify_project.service.TrackService;
+import com.handedereli.spotify_project.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,10 +16,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SpotifyController {
 
-    private final SpotifyClient spotifyWebClient;
     private final ArtistService artistService;
     private final TrackService trackService;
     private final AlbumService albumService;
+    private final ArtistBundleService artistBundleService;
 
     @GetMapping("/ping")
     public String ping() { return "ok"; }
@@ -66,6 +64,14 @@ public class SpotifyController {
             @PathVariable String id,
             @RequestParam(defaultValue = "TR") String market) {
         return ResponseEntity.ok(albumService.getArtistAlbumsWithTracks(id, market));
+    }
+    // tek endpoint: /api/artist/search?name=hadise&market=TR
+    @GetMapping("/search")
+    public ResponseEntity<ArtistBundleDto> getArtistBundleByName(
+            @RequestParam String name,
+            @RequestParam(defaultValue = "TR") String market
+    ) {
+        return ResponseEntity.ok(artistBundleService.getArtistBundleByName(name, market));
     }
 
 }

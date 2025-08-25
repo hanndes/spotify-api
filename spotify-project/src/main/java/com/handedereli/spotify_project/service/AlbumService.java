@@ -47,7 +47,7 @@ public class AlbumService {
     }
 
     public ArtistDto getArtistAlbumsWithTracks(String artistId, String market) {
-        // 1) Artist bilgisi
+        // 1) Artist
         JsonNode artistRoot = spotifyClient.getArtist(artistId);
 
         // 2) Genres
@@ -57,34 +57,19 @@ public class AlbumService {
             genresNode.forEach(n -> genres.add(n.asText()));
         }
 
-        // 3) ArtistDto (şimdilik albums=null)
-        ArtistDto base = new ArtistDto(
-                artistRoot.path("name").asText(),
-                artistRoot.path("popularity").asInt(),
-                new ArtistDto.Followers(artistRoot.path("followers").path("total").asLong()),
-                genres,
-                null
-        );
-
-        // 4) Sanatçının albümleri (tek sayfa)
-        JsonNode albumsRoot = spotifyClient.getArtistAlbums(artistId, market); // limit=50 veriyorsan tek sayfa yeter
+        // 3) Albümler (tek sayfa: client'ta limit=50 ver)
+        JsonNode albumsRoot = spotifyClient.getArtistAlbums(artistId, market);
         List<AlbumDto> albums = new ArrayList<>();
 
         for (JsonNode a : albumsRoot.path("items")) {
-            String albumId     = a.path("id").asText();
+            String albumId     = a.path("id").asText();               // serviste lokalde kullan
             String albumName   = a.path("name").asText();
             String releaseDate = a.path("release_date").asText();
             int totalTracks    = a.path("total_tracks").asInt();
 
-            // Albümün track’leri (tek çağrı: /albums/{id}?market=...)
+            // Albüm + embedded tracks (tek çağrı)
             JsonNode albumWithTracks = spotifyClient.getAlbumWithTracks(albumId, market);
-
-            // /albums/{id} yanıtı: tracks.items altında
             JsonNode trackItems = albumWithTracks.path("tracks").path("items");
-            if (!trackItems.isArray()) {
-                // Eğer /albums/{id}/tracks dönüyorsa kökte items olur
-                trackItems = albumWithTracks.path("items");
-            }
 
             List<TrackDto> tracks = new ArrayList<>();
             if (trackItems.isArray()) {
@@ -104,8 +89,15 @@ public class AlbumService {
             ));
         }
 
-        // 5) Albümleri ekle
-        return base.withAlbums(albums);
+        // 4) ArtistDto'yu tek seferde döndür
+        return new ArtistDto(
+                artistRoot.path("name").asText(),
+                artistRoot.path("popularity").asInt(),
+                new ArtistDto.Followers(artistRoot.path("followers").path("total").asLong()),
+                genres,
+                albums
+        );
     }
+
 
 }
